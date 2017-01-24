@@ -26,7 +26,9 @@ Isp    = data(4,:)   ; %[s]
 diam   = data(5,:)   ; %[m]
 t_burn = data(6,:)   ; %[s]
 for i = 1:length(m0)
-    m_frac(i) = mp(i)/sum(m0(i:end)) ;
+    m_tot(i) = sum(m0(i:end)) ;
+    m_frac(i) = mp(i)/m_tot(i) ;
+    T_W(i) = Thrust(i)/m_tot(i)/9.81 ;
 end
 
 switch external
@@ -65,7 +67,7 @@ for i = 1:length(m_frac)
     tspan = [t0,t_burn(i)];           % ...Range of integration
     
     t_b = t_b + t_burn(i) ;
-    [t, f] = ode45(@rocketrates, tspan, f0, options, t_burn(i), sum(m0(i:end)), m_dot(i),...
+    [t, f] = ode45(@rocketrates, tspan, f0, options, t_burn(i), total_m(i), m_dot(i),...
         g0, Re, Thrust(i), A(i), CD, hturn);
     
     l = length(t) + l ;
