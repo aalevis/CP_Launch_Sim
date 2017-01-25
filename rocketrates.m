@@ -1,10 +1,10 @@
-function [ dydt ] = rocketrates( t , y, tburn, m0, m_dot, g0, Re, Thrust, A, CD, hturn )
+function [ dydt ] = rocketrates( t , y, t_burn, m_i, m_dot, Thrust, A, g0, Re, CD, h_turn, gamma_check, i, last_stage)
 % Calculates the time rates df/dt of the variables f(t)
 % in the equations of motion of a gravity turn trajectory.
 %-------------------------
-t_gamma = 1000 ;
+
 %...Initialize dfdt as a column vector:
-dfdt = zeros(6,1);
+dydt = zeros(6,1);
 v = y(1);     % ...Velocity
 gamma = y(2); % ...Flight path angle
 x = y(3);     % ...Downrange distance
@@ -13,11 +13,11 @@ vD = y(5);    % ...Velocity loss due to drag
 vG = y(6);    % ...Velocity loss due to gravity
 %...When time t exceeds the burn time, set the thrust
 % and the mass flow rate equal to zero:
-if t < tburn
-    m = m0 - m_dot*t; % ...Current vehicle mass
+if t < t_burn
+    m = m_i - m_dot*t; % ...Current vehicle mass
     T = Thrust;       % ...Current thrust
 else
-    m = m0 - m_dot*tburn; % ...Current vehicle mass
+    m = m_i - m_dot*t_burn; % ...Current vehicle mass
     T = 0;                % ...Current thrust
 end
 
@@ -29,9 +29,9 @@ D = 1/2 * rho(6)*v^2 * A * CD; % ...Drag [Equation 11.1]
 
 %...Define the first derivatives of v, gamma, x, h, vD and vG
 % ("dot" means time derivative):
-%v_dot = T/m - D/m - g*sin(gamma); % ...Equation 11.6
-%...Start the gravity turn when h ¼ hturn:
-if h <= hturn
+
+%...Start the gravity turn when h = hturn:
+if h <= h_turn
     v_dot = T/m - D/m - g;
     gamma_dot = 0;
     x_dot = 0;
@@ -43,24 +43,14 @@ else
     h_dot = v*sin(gamma);                          % ...Equation 11.8(2)
     vG_dot = -g*sin(gamma);                        % ...Gravity loss rate
     
-    % control gamma, by Curtis 11.7 until we are at altitude
-    if gamma < 0
-        if t < t_gamma % s
-             gamma_dot = -1/v*(g - v^2/(Re + h))*cos(gamma);% ...Equation 11.7  (rad/s)
-        else
-             gamma_dot = -2*gamma; % rad/s
-        end
-    elseif gamma == 0
-        gamma_dot = 0;
-    elseif gamma > 0
-        
-        if t < t_gamma % s
-             gamma_dot = -1/v*(g - v^2/(Re + h))*cos(gamma);% ...Equation 11.7  (rad/s)
-        else
-             gamma_dot = -gamma; % rad/s
-        end
+    if gamma_check == 0
+         gamma_dot = -1/v*(g - v^2/(Re + h))*cos(gamma);% ...Equation 11.7  (rad/s)
+    elseif gamma_check == 1
+        gamma_dot = 0; 
     end
+    
 end
+
 
 vD_dot = -D/m; % ...Drag loss rate
 
@@ -72,6 +62,4 @@ dydt(4) = h_dot;
 dydt(5) = vD_dot;
 dydt(6) = vG_dot;
 
-dydt = dydt';
 end
-
