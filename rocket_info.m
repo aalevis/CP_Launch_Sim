@@ -20,6 +20,7 @@ gamma_turn = 89.6; % deg, initial flight path angle at pitchover   --- delta4_54
 
 [ t,launch_char ] = model_launch('f9.txt', m_pl, h_turn, gamma_turn);
 
+
 % ----- Format for text file ----- 
 % External Boosters   m_o  m_p  Thrust Isp  diam  t_burn  num_boost   
 % 1st stage           m_o  m_p  Thrust Isp  diam  t_burn  num_boost
