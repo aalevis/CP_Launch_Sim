@@ -1,0 +1,8 @@
+function [value, isterminal, direction] = gamma_event(t, y, t_burn, m_i, m_dot,...
+            T, A, g0, Re, CD, h_turn, gamma_check, i, num_stages)
+
+value = y(2); % rad Flight Path Angle
+isterminal = 1; % stop integration
+direction = -1; % approach with a negative slope
+
+end
