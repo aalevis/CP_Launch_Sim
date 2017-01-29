@@ -1,4 +1,4 @@
-function [ dydt ] = rocketrates( t , y, t_burn, m_i, m_dot, Thrust, A, g0, Re, CD, h_turn, gamma_check, i, last_stage)
+function [ dydt ] = rocketrates( t , y, t_burn, m_i, m_dot, Thrust, A, g0, Re, CD, h_turn, h_targ_check, h_targ, i, last_stage)
 % Calculates the time rates df/dt of the variables f(t)
 % in the equations of motion of a gravity turn trajectory.
 %-------------------------
@@ -24,7 +24,7 @@ end
 g = g0/(1 + h/Re)^2; % ...Gravitational variation
 
 % Drag
-[ ~,rho ] = atmosnrlmsise00( h,0,0,2017,1,0,'none' );
+[ ~,rho ] = atmosnrlmsise00( h,0,0,2017,1,0,'none');
 D = 1/2 * rho(6)*v^2 * A * CD; % ...Drag [Equation 11.1]
 
 %...Define the first derivatives of v, gamma, x, h, vD and vG
@@ -43,10 +43,10 @@ else
     h_dot = v*sin(gamma);                          % ...Equation 11.8(2)
     vG_dot = -g*sin(gamma);                        % ...Gravity loss rate
     
-    if gamma_check == 0
+    if h_targ_check == 0
          gamma_dot = -1/v*(g - v^2/(Re + h))*cos(gamma);% ...Equation 11.7  (rad/s)
-    elseif gamma_check == 1
-        gamma_dot = 0; 
+    elseif h_targ_check == 1
+        gamma_dot = -2*gamma; % rad/s
     end
     
 end
@@ -63,3 +63,4 @@ dydt(5) = vD_dot;
 dydt(6) = vG_dot;
 
 end
+
