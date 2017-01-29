@@ -1,4 +1,3 @@
-% rocket info input
 clearvars
 close all
 clc
@@ -6,19 +5,23 @@ clc
 %% Rocket Simulation Master
 
 % ----- To Do -----
-%
-%
+% - add event fxn so when gamma = 0, gamma_dot = 0
+% - 
+% - add event fxn so when we hit h_turn we make gamma = gamma_turn (right
+% now we are flying at gamma_turn until h_turn)
 
 % Constants
+
 deg = pi/180;  % ...Convert degrees to radians
 
 %% Rocket input parameters
 
-m_pl = 5000; % kg,  Payload Mass
+m_pl = 10000; % kg,  Payload Mass
+h_targ = 250e3; % m, Target altitude (Periapse of final orbit, Apoapse of suborbital trajectory)
 h_turn = 130; % ...Height at which pitchover begins (m)
-gamma_turn = 89.6; % deg, initial flight path angle at pitchover   --- delta4_54: 89  F9: 89.7 ---
+gamma_turn = 89.9; % deg, initial flight path angle at pitchover   --- delta4_54: 89  F9: 89.7 ---
 
-[ t,launch_char ] = model_launch('f9.txt', m_pl, h_turn, gamma_turn);
+[ t,launch_char ] = model_launch('f9.txt', m_pl, h_turn, gamma_turn, h_targ);
 
 % ----- Format for text file ----- 
 % External Boosters   m_o  m_p  Thrust Isp  diam  t_burn  num_boost   
