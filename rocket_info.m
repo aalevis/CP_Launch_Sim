@@ -1,4 +1,3 @@
-% rocket info input
 clearvars
 close all
 clc
@@ -6,19 +5,25 @@ clc
 %% Rocket Simulation Master
 
 % ----- To Do -----
-%
-%
+% - add event fxn so when gamma = 0, gamma_dot = 0
+% - 
+% - add event fxn so when we hit h_turn we make gamma = gamma_turn (right
+% now we are flying at gamma_turn until h_turn)
 
 % Constants
+
 deg = pi/180;  % ...Convert degrees to radians
 
 %% Rocket input parameters
 
-m_pl = 5000; % kg,  Payload Mass
+m_pl = 3000; % kg,  Payload Mass
+h_targ = 650e3; % m, Target altitude (Periapse of final orbit, Apoapse of suborbital trajectory)
 h_turn = 130; % ...Height at which pitchover begins (m)
-gamma_turn = 89.6; % deg, initial flight path angle at pitchover   --- delta4_54: 89  F9: 89.7 ---
+gamma_turn = 89.9; % deg, initial flight path angle at pitchover   --- delta4_54: 89  F9: 89.7 ---
+inc = 45; % Target Inclination
+lat = 0; % Latitude of launch pad
 
-[ t,launch_char ] = model_launch('f9.txt', m_pl, h_turn, gamma_turn);
+[ t,launch_char ] = model_launch('f9.txt', m_pl, h_turn, gamma_turn, h_targ, inc, lat);
 
 
 % ----- Format for text file ----- 
@@ -104,6 +109,35 @@ plot(t,a, 'Linewidth', 4)
 ob = title('Acceleration vs. Time');
 set(ob, 'FontSize', 20), set(gca, 'FontSize', 18)
 ylabel('Acceleration (m/s^2)'), xlabel('Time (s)'), grid on
+
+% Get COES (assume RAAN and arg of Perigee)
+if norm(gamma(end)) <= 1
+    omeg = 180;
+    RAAN = 0;
+    mu = 398600;
+    alt = h(end); % Final altitude
+    vf = v(end); % Final velocity
+    Re = 6378; % km
+
+    r_peri = [alt+Re 0 0]';
+    v_peri = [0 vf 0]';
+
+    [ Q ] = Qeci2peri( omeg, inc, RAAN );
+
+    r_eci = Q'*r_peri;
+    v_eci = Q'*v_peri;
+
+    [ h, i, RAAN, ecc, omeg, theta ] = coes( r_eci, v_eci, mu );
+    
+    disp_coes( h, i, RAAN, ecc, omeg, theta );
+    
+    [ r_a, r_p ] = rv2periapo( r_eci', v_eci', mu );
+
+    disp(['Perigee Alt = ' num2str(r_p-Re) ' km'])
+    disp(['Apogee Alt = ' num2str(r_a-Re) ' km'])
+else
+    disp('Warning: Final FP angle is not zero')
+end
 
 
 

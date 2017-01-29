@@ -1,5 +1,4 @@
-
-function [ t1,f1 ] = model_launch(fid, m_pl, h_turn, gamma_turn)
+function [ t1,f1 ] = model_launch(fid, m_pl, h_turn, gamma_turn, h_targ, inc, lat)
 
 deg = pi/180;       % ...Convert degrees to radians
 g0 = 9.81;          % ...Sea-level acceleration of gravity (m/s^2)
@@ -65,8 +64,15 @@ for i = 1:length(m_o) % all stages
     end
 end
 
+% Accounting for launch location and inclination
+% Calculate initial horizontal velocity due to spin of Earth
+v0 = 459*cosd(lat); % m/s
+
+% Project onto trajectory plane using target inclination
+v0_traj = v0*cosd(inc); % m/s
+
 % ...Initial conditions:
-v0 = 0;             % ...Initial velocity (m/s)
+v0 = v0_traj;             % ...Initial velocity (m/s)
 gamma0 = 90*deg; % ...Initial flight path angle (rad)
 x0 = 0;             % ...Initial downrange distance (km)
 h0 = 0;             % ...Initial altitude (km)
@@ -76,7 +82,7 @@ vG0 = 0;            % ...Initial value of velocity loss due to gravity (m/s)
 %...Initial conditions vector:
 f0 = [v0; gamma0; x0; h0; vD0; vG0];
 
-gamma_check = 0; % when gamma_check = 1, gamma is 0
+h_targ_check = 0; % when gamma_check = 1, gamma is 0
 t1 = 0;
 f1 = 0;
 
@@ -101,7 +107,12 @@ for i = 1:length(m_o)
         options = odeset('Abstol', 1e-8, 'Reltol', 1e-8,'Events', @Rocket_Events);
 
         [t, f, ~, ~, ~] = ode45(@rocketrates, tspan, f0, options, t_burn(i), m_i(i), m_dot(i), ...
-            T(i), A(i), g0, Re, CD, h_turn, gamma_check, i, length(m_o));  
+            T(i), A(i), g0, Re, CD, h_turn, h_targ_check, h_targ, i, length(m_o));  
+        
+%         x = f(:,3)*1.e-3;   % ...Downrange distance (km)
+%         h = f(:,4)*1.e-3;   % ...Altitude (km)
+%         figure; plot(x, h) 
+
         
      % combine stage results
         
@@ -123,10 +134,14 @@ for i = 1:length(m_o)
             f0 = [f0(1); gamma_turn*deg; f0(3); f0(4); f0(5); f0(6)];
             m_i(i) = m_i(i) - t(end)*m_dot(i);
             
-            options = odeset('Abstol', 1e-8, 'Reltol', 1e-8,'Events', @gamma_event);
+            options = odeset('Abstol', 1e-8, 'Reltol', 1e-8,'Events', @orbit_event);
 
             [t, f, ~, ~, ~] = ode45(@rocketrates, tspan, f0, options, t_burn(i), m_i(i), m_dot(i),...
-                 T(i), A(i), g0, Re, CD, h_turn, gamma_check, i, length(m_o));
+                 T(i), A(i), g0, Re, CD, h_turn, h_targ_check, h_targ, i, length(m_o));
+             
+%              x = f(:,3)*1.e-3;   % ...Downrange distance (km)
+%         h = f(:,4)*1.e-3;   % ...Altitude (km)
+%         figure; plot(x, h) 
              
            
             % combine stage results
@@ -141,15 +156,19 @@ for i = 1:length(m_o)
 
             f0 = f1(end,:) ;
         
-    elseif round(f0(2)) == 0  %  flight path angle ~ 0, make gamma_dot = 0 and finish stage
-            gamma_check = 1;
+    elseif round(f0(4)) == h_targ  %  currently at h_targ, force gamma to 0 and resume stage
+            h_targ_check = 1;
             tspan = [0 t_burn(i) - t(end)];  % calc new tspan
             m_i(i) = m_i(i) - t(end)*m_dot(i);
             
-            options = odeset('Abstol', 1e-8, 'Reltol', 1e-8,'Events', @gamma_event);
+            options = odeset('Abstol', 1e-8, 'Reltol', 1e-8);
 
-            [t, f, ~, ~, ~] = ode45(@rocketrates, tspan, f0, options, t_burn(i), m_i(i), m_dot(i),...
-                 T(i), A(i), g0, Re, CD, h_turn, gamma_check, i, length(m_o));
+            [t, f] = ode45(@rocketrates, tspan, f0, options, t_burn(i), m_i(i), m_dot(i),...
+                 T(i), A(i), g0, Re, CD, h_turn, h_targ_check, h_targ, i, length(m_o));
+             
+%              x = f(:,3)*1.e-3;   % ...Downrange distance (km)
+%              h = f(:,4)*1.e-3;   % ...Altitude (km)
+%              figure; plot(x, h) 
                
             % combine stage results
         
